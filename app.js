@@ -1,9 +1,11 @@
+
 var createError = require('http-errors');
 var express = require('express');
 var cors = require('cors')
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var compression = require('compression')
 require('dotenv').config()
 
 var index = require('./routes/index');
@@ -13,7 +15,7 @@ var woocommerce = require('./routes/woocommerce');
 
 
 var app = express();
-
+app.use(compression());
 // view engine setup
 app.set('views', 
 path.join(__dirname, 'views'));
