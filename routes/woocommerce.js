@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
-
+console.log(process.env)
 var multiSitePrefixes = process.env.WOOCOMMERCE_PREFIX.split(",");
 var multisiteLogins = process.env.WOOCOMMERCE_CUSTOMER_KEY.split(",");
 var multisitePasswords = process.env.WOOCOMMERCE_CUSTOMER_SECRET.split(",");
