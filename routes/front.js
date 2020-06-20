@@ -70,7 +70,7 @@ router.get('/conversations', function (req, res) {
                 return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
             } else if (err.response && err.response.status === 404){
                 res.status(200)
-                return res.send({ status: 200, title: 'Not Found', message: [] })
+                return res.send({ status: 200, title: 'Not Found', conversations: [] })
             }
             res.status(500)
             return res.send({ status: 500, title: 'Internal server error', message: 'There is an error with the server, please try again later!' })
