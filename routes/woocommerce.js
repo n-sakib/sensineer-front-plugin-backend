@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
+const { options } = require('../app');
+const { post } = require('request');
 var multiSitePrefixes = process.env.WOOCOMMERCE_PREFIX.split(",");
 var multisiteLogins = process.env.WOOCOMMERCE_CUSTOMER_KEY.split(",");
 var multisitePasswords = process.env.WOOCOMMERCE_CUSTOMER_SECRET.split(",");
@@ -17,7 +19,7 @@ router.get('/orders', function (req, res) {
         axios(urlWithOptions)
             .then(wooRes => {
                 wooRes.data.forEach(order => {
-                    allOrders.push({ id: order.id, value: order.total + order.currency_symbol, items: order.line_items, tld: multiSitePrefixes[index]})
+                    allOrders.push({ id: order.id, value: order.total + order.currency_symbol, items: order.line_items, tld: multiSitePrefixes[index] })
                     customer = order.billing
                     tld.indexOf(multiSitePrefixes[index]) === -1 ? tld.push(multiSitePrefixes[index]) : null;
                 });
@@ -55,39 +57,77 @@ router.get('/orders', function (req, res) {
 });
 
 router.get('/post', function (req, res) {
+    let index = 0;
     let orderId = req.query.orderid;
+    // multiSitePrefixes.forEach(prefix => {
 
-    var authdata = new Buffer(`${multisiteLogins[0]}:${multisitePasswords[0]}`);
-    let base64authdata = authdata.toString('base64');
+    //     console.log(options)
+    //     axios(options)
+    //         .then(data => {
+    //             data = JSON.parse(data.data)
+    //             if (data.data !== 0) {
+    //                 console.log(data.data)
+    //                 res.status(200)
+    //                 return res.send({ status: 200, title: 'OK', data })
+    //             }
+    //         })
+    //         .catch(err => {
+    //             if (err.response && err.response.status === 401) {
+    //                 res.status(401)
+    //                 return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
+    //             }
+    //             res.status(500)
+    //             return res.send({ status: 500, title: 'Internal Error', message: err })
+    //         })
+    // });
 
-    multiSitePrefixes.forEach(prefix => {
-        options = {
-            method: 'get',
-            url: `${process.env.WOOCOMMERCE_BASE}.${prefix}/wp-json/wc/v3/post/?id=${orderId}&prefix=${prefix}`,
-            headers: {
-                'Authorization': `Basic ${base64authdata}`
-            }
-        }
-    
-        axios(options)
-            .then(data => {
-                data = JSON.parse(data.data)
-                if(data.data !== 0) {
-                    res.status(200)
-                    return res.send({ status: 200, title: 'OK', data })
+    const urlWithOptions = createOptionForPost('GET', multiSitePrefixes[index], orderId)
+    const getPostId = (urlWithOptions, data) =>
+        axios(urlWithOptions)
+            .then(wooRes => {
+                data = wooRes;
+                index = index + 1;
+                prefix = multiSitePrefixes[index-1];
+                id = data.data;
+                if (data.data === 0) {
+                    if(index !== multiSitePrefixes.length) {
+                        return getPostId(createOptionForPost('GET', multiSitePrefixes[index], orderId), data)
+                    } else {
+                        return Promise.resolve({id, prefix})
+                    }
+                } else {
+                    return Promise.resolve({id, prefix})
                 }
             })
             .catch(err => {
-                if (err.response && err.response.status === 401) {
-                    res.status(401)
-                    return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
-                }
-                res.status(500)
-                return res.send({status: 500, title: 'Internal Error', message: err})
-         })
-    });
+                console.log(err)
+                return Promise.reject(err)
+            })
+
+    getPostId(urlWithOptions)
+        .then((post) => {
+            res.status(200)
+            return res.send({ status: 200, title: 'OK', post })
+        })
+        .catch((err) => {
+            console.log(err)
+            if (err.response && err.response.status === 401) {
+                res.status(401)
+                return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
+            }
+            res.status(500)
+            return res.send(err)
+            return res.send({ status: 500, title: 'Internal server error', message: 'There is an error with the server, please try again later!' })
+        });
 });
 
+createOptionForPost = (method, domain, orderId) => {
+    let options = {
+        method,
+        url: `${process.env.WOOCOMMERCE_BASE}.${domain}/wp-json/wc/v3/post/?id=${orderId}&prefix=${domain}`
+    }
+    return options;
+}
 createOptionForOrders = (method, domain, id, pass, identifier) => {
     var authdata = new Buffer(`${id}:${pass}`);
     let base64authdata = authdata.toString('base64');
