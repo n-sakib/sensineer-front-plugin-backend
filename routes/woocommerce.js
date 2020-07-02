@@ -59,27 +59,6 @@ router.get('/orders', function (req, res) {
 router.get('/post', function (req, res) {
     let index = 0;
     let orderId = req.query.orderid;
-    // multiSitePrefixes.forEach(prefix => {
-
-    //     console.log(options)
-    //     axios(options)
-    //         .then(data => {
-    //             data = JSON.parse(data.data)
-    //             if (data.data !== 0) {
-    //                 console.log(data.data)
-    //                 res.status(200)
-    //                 return res.send({ status: 200, title: 'OK', data })
-    //             }
-    //         })
-    //         .catch(err => {
-    //             if (err.response && err.response.status === 401) {
-    //                 res.status(401)
-    //                 return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
-    //             }
-    //             res.status(500)
-    //             return res.send({ status: 500, title: 'Internal Error', message: err })
-    //         })
-    // });
 
     const urlWithOptions = createOptionForPost('GET', multiSitePrefixes[index], orderId)
     const getPostId = (urlWithOptions, data) =>
@@ -93,10 +72,10 @@ router.get('/post', function (req, res) {
                     if(index !== multiSitePrefixes.length) {
                         return getPostId(createOptionForPost('GET', multiSitePrefixes[index], orderId), data)
                     } else {
-                        return Promise.resolve({id, prefix})
+                        return Promise.resolve(id)
                     }
                 } else {
-                    return Promise.resolve({id, prefix})
+                    return Promise.resolve(id)
                 }
             })
             .catch(err => {
@@ -105,9 +84,9 @@ router.get('/post', function (req, res) {
             })
 
     getPostId(urlWithOptions)
-        .then((post) => {
+        .then((id) => {
             res.status(200)
-            return res.send({ status: 200, title: 'OK', post })
+            return res.send({ status: 200, title: 'OK', id })
         })
         .catch((err) => {
             console.log(err)
