@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
-console.log(process.env)
 var multiSitePrefixes = process.env.WOOCOMMERCE_PREFIX.split(",");
 var multisiteLogins = process.env.WOOCOMMERCE_CUSTOMER_KEY.split(",");
 var multisitePasswords = process.env.WOOCOMMERCE_CUSTOMER_SECRET.split(",");
@@ -56,34 +55,37 @@ router.get('/orders', function (req, res) {
 });
 
 router.get('/post', function (req, res) {
-    let orderId = req.query.orderid
+    let orderId = req.query.orderid;
+
     var authdata = new Buffer(`${multisiteLogins[0]}:${multisitePasswords[0]}`);
     let base64authdata = authdata.toString('base64');
 
-    options = {
-        method: 'get',
-        url: `${process.env.WOOCOMMERCE_BASE}.com/wp-json/wc/v3/post/${orderId}`,
-        headers: {
-            'Authorization': `Basic ${base64authdata}`
-        }
-    }
-
-    axios(options)
-        .then(data => {
-            data = JSON.parse(data.data)
-            res.status(200)
-            return res.send({ status: 200, title: 'OK', data })
-        })
-        .catch(err => {
-            //console.log(err)
-            if (err.response && err.response.status === 401) {
-                res.status(401)
-                return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
+    multiSitePrefixes.forEach(prefix => {
+        options = {
+            method: 'get',
+            url: `${process.env.WOOCOMMERCE_BASE}.${prefix}/wp-json/wc/v3/post/?id=${orderId}&prefix=${prefix}`,
+            headers: {
+                'Authorization': `Basic ${base64authdata}`
             }
-            res.status(500)
-            return res.send({status: 500, title: 'Internal Error', message: 'Internal Server Error!'})
-     })
-
+        }
+    
+        axios(options)
+            .then(data => {
+                data = JSON.parse(data.data)
+                if(data.data !== 0) {
+                    res.status(200)
+                    return res.send({ status: 200, title: 'OK', data })
+                }
+            })
+            .catch(err => {
+                if (err.response && err.response.status === 401) {
+                    res.status(401)
+                    return res.send({ status: 401, title: 'Unauthorized', message: 'Please ask your system admin to renew your token!' })
+                }
+                res.status(500)
+                return res.send({status: 500, title: 'Internal Error', message: err})
+         })
+    });
 });
 
 createOptionForOrders = (method, domain, id, pass, identifier) => {
