@@ -110,13 +110,14 @@ createOptionForPost = (method, domain, orderId) => {
 createOptionForOrders = (method, domain, id, pass, identifier) => {
     var authdata = new Buffer(`${id}:${pass}`);
     let base64authdata = authdata.toString('base64');
-    return options = {
+    let options = {
         method,
         url: `${process.env.WOOCOMMERCE_BASE}.${domain}/wp-json/wc/v3/orders?search=${identifier}&per_page=100`,
         headers: {
             'Authorization': `Basic ${base64authdata}`
         }
     }
+    return options;
 }
 module.exports = {
     router
