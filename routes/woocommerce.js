@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
-require('dotenv').config();
 
 var multiSitePrefixes = process.env.WOOCOMMERCE_PREFIX.split(",");
 var multisiteLogins = process.env.WOOCOMMERCE_CUSTOMER_KEY.split(",");
