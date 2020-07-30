@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
+require('dotenv').config();
 
 var multiSitePrefixes = process.env.WOOCOMMERCE_PREFIX.split(",");
 var multisiteLogins = process.env.WOOCOMMERCE_CUSTOMER_KEY.split(",");
@@ -17,7 +18,7 @@ router.get('/orders', function (req, res) {
     const getCustomerOrders = (urlWithOptions, allOrders = []) =>
         axios(urlWithOptions)
             .then(wooRes => {
-                if(isOrder) {
+                if(isOrder === "true") {
                     let order = wooRes.data;
                     allOrders.push({ id: order.id, value: order.total + order.currency_symbol, items: order.line_items, tld: multiSitePrefixes[index] })
                     customer = order.billing;
@@ -132,7 +133,7 @@ createOptionForOrders = (method, domain, id, pass, identifier, isOrder) => {
         }
     }
 
-    isOrder
+    isOrder === "true"
         ? options.url = `${process.env.WOOCOMMERCE_BASE}.${domain}/wp-json/wc/v3/orders/${identifier}`
         : options.url = `${process.env.WOOCOMMERCE_BASE}.${domain}/wp-json/wc/v3/orders?search=${identifier}&per_page=100`
     return options;
